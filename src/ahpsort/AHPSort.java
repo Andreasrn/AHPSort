@@ -11,6 +11,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 
 /**
  *
@@ -182,7 +186,7 @@ public class AHPSort {
      * @param s string to turn into a matrix
      * @return Matrix
      */
-    public static ArrayList<ArrayList<Double>> stringToMatrix(String s){
+    private static ArrayList<ArrayList<Double>> stringToMatrix(String s){
         String[] rows = s.split("-");
         ArrayList<ArrayList<Double>> m = new ArrayList<>();
 
@@ -204,7 +208,7 @@ public class AHPSort {
      * It shows on the screen the matrix given
      * @param m Matrix to be shown
      */
-    public static void printMatrix(ArrayList<ArrayList<Double>> m){
+    private static void printMatrix(ArrayList<ArrayList<Double>> m){
         for (int i = 0;i < m.size(); i++){
             for (int j = 0; j < m.get(i).size(); j++){
                 System.out.print(m.get(i).get(j)+"  ");
@@ -220,7 +224,7 @@ public class AHPSort {
      * It shows on the screen the loaded file's data
      * @param data 
      */
-    public static void printData(ArrayList<ArrayList<ArrayList<Double>>> data){
+    private static void printData(ArrayList<ArrayList<ArrayList<Double>>> data){
         System.out.println("Estos son los datos del archivo "+currentDataFile.getName());
         System.out.println("Matriz de comparación entre criterios:");
         printMatrix(data.get(0));
@@ -230,5 +234,22 @@ public class AHPSort {
             System.out.println("Criterio "+i+": ");
             printMatrix(data.get(i));
         }
+    }
+    
+    
+    /**
+     * It returns a Double[][] from ArrayList<ArrayList<Double>>
+     * @param matrix 
+     */
+    private static double[][] toStaticMatrix(ArrayList<ArrayList<Double>> matrix){
+        double m[][] = new double[matrix.size()][matrix.get(0).size()];
+        
+        for (int i = 0; i < matrix.size(); i++){
+            for (int j = 0; j < matrix.get(i).size(); j++){
+                m[i][j] = matrix.get(i).get(j);
+            }
+        }
+        
+        return m;
     }
 }
