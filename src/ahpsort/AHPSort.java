@@ -5,8 +5,11 @@
  */
 package ahpsort;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -33,7 +36,6 @@ public class AHPSort {
                     System.out.println("Lo haría, pero aún no me han implementado.\n");
                     break;
                 case 2: //Load custom file
-                    //TODO
                     showLoadingFileMenu();
                     break;
                 case 3: //Solve using custom file's data
@@ -41,6 +43,9 @@ public class AHPSort {
                         opt = -1;
                         break;
                     }
+                    
+                    ArrayList<ArrayList<ArrayList<Double>>> data = fileToMatrix();
+                    if (data != null) printData(data);
                     
                     //TODO 
                     System.out.println("Lo haría, pero aún no me han implementado.\n");
@@ -124,4 +129,106 @@ public class AHPSort {
 
     }
     
+    /**
+     * It returns an array of matrixes derived from currentDataFile attribute.
+     * 
+     * The result is an static array of ArrayList<ArrayList<Double>>, which
+     * are matrixes. The first one is the one about criteria, and the other ones
+     * correspond to each criterion
+     * 
+     * @return array Array containing matrixes
+     */
+    private static ArrayList<ArrayList<ArrayList<Double>>> fileToMatrix(){
+        if (!currentDataFile.exists()){
+            System.out.println("El archivo cargado ya no existe. Por favor, cárgalo de nuevo. \n");
+            return null;
+        }
+        
+        ArrayList<ArrayList<ArrayList<Double>>> output = new ArrayList<>();
+        
+        try{
+            
+            FileReader fr = new FileReader(currentDataFile);
+            BufferedReader br = new BufferedReader(fr);
+            
+            int numCriteria = Integer.parseInt(br.readLine());
+            int numAlternatives = Integer.parseInt(br.readLine());
+            
+            br.readLine(); //Skip empty line
+            
+            String m;
+            for (int i = 0; i < numCriteria+1; i++){
+                output.add(stringToMatrix(br.readLine()));
+                
+                if (i == numCriteria && output.size() != i+1){ //Check if file was wrongly written
+                    throw new Exception();
+                }
+            }
+
+        } catch (Exception e){
+            System.out.println("Ha habido un problema con el archivo.");
+            currentDataFile = null;
+            return null;
+        } 
+
+        return output;
+    }  
+    
+    /**
+     * It turns an string into a matrix following certain rules.
+     * 
+     * A given string will contain values separated by ','. Each row will
+     * be divided by a '-'
+     * @param s string to turn into a matrix
+     * @return Matrix
+     */
+    public static ArrayList<ArrayList<Double>> stringToMatrix(String s){
+        String[] rows = s.split("-");
+        ArrayList<ArrayList<Double>> m = new ArrayList<>();
+
+        for (int j = 0; j < rows.length; j++){
+            m.add(new ArrayList<>());
+
+            String[] values  = rows[j].split(",");
+
+            for (int k = 0; k< values.length; k++){
+                m.get(j).add(Double.parseDouble(values[k]));
+            }
+
+        }
+        
+        return m;
+    }
+    
+    /**
+     * It shows on the screen the matrix given
+     * @param m Matrix to be shown
+     */
+    public static void printMatrix(ArrayList<ArrayList<Double>> m){
+        for (int i = 0;i < m.size(); i++){
+            for (int j = 0; j < m.get(i).size(); j++){
+                System.out.print(m.get(i).get(j)+"  ");
+            }
+            
+            System.out.println();
+        }
+        
+        System.out.println();
+    }
+    
+    /**
+     * It shows on the screen the loaded file's data
+     * @param data 
+     */
+    public static void printData(ArrayList<ArrayList<ArrayList<Double>>> data){
+        System.out.println("Estos son los datos del archivo "+currentDataFile.getName());
+        System.out.println("Matriz de comparación entre criterios:");
+        printMatrix(data.get(0));
+        System.out.println("Matrices de comparación de alternativas según cada criterio: ");
+        
+        for (int i = 1; i < data.size(); i++){
+            System.out.println("Criterio "+i+": ");
+            printMatrix(data.get(i));
+        }
+    }
 }
