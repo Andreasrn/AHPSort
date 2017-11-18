@@ -322,7 +322,7 @@ public class AHPSort {
         for (int i = 0; i < tempVectors.size(); i+=criteriaVectors.size()){
             sum1 = 0;
             sum2 = 0;  
-            for (int j = i; j < i+5; j++){
+            for (int j = i; j < i+numCriteria; j++){
                 sum1 += tempVectors.get(j).get(0)*criteriaWeights.get(j%criteriaWeights.size());
                 sum2 += tempVectors.get(j).get(1)*criteriaWeights.get(j%criteriaWeights.size());
             }
