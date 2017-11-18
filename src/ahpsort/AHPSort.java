@@ -23,6 +23,10 @@ import org.apache.commons.math3.linear.RealVector;
 public class AHPSort {
     
     static File currentDataFile = null;
+    static ArrayList<ArrayList<Double>> criteria = null;
+    static ArrayList<Double> lp = null;
+    static ArrayList<ArrayList<Double>> criteriaVectors = null;
+    static ArrayList<ArrayList<ArrayList<Double>>> twobytwoMatrixes = null;
 
     /**
      * @param args the command line arguments
@@ -48,11 +52,9 @@ public class AHPSort {
                         break;
                     }
                     
-                    ArrayList<ArrayList<ArrayList<Double>>> data = fileToMatrix();
-                    if (data != null) printData(data);
-                    
+                    printData();
                     //TODO 
-                    System.out.println("Lo haría, pero aún no me han implementado.\n");
+                    solveWithCurrentData();
                 
             }
             
@@ -107,7 +109,8 @@ public class AHPSort {
         System.out.println("-Segunda línea: Número de alternativas.");
         System.out.println("-Tercera línea: Línea en blanco");
         System.out.println("-Cuarta línea: Matriz de criterios, separando los valores con comas e indicando el fin de una línea con un guión. \nEjemplo de matriz identidad 2x2: 1,0-0,1");
-        System.out.println("-Sucesivas líneas(sin líneas en blanco): Matrices de comparaciones según criterio.");
+        System.out.println("-Quinta línea: Lista de perfiles límite ordenados de la misma forma en la que se presenten los criterios");
+        System.out.println("-Sucesivas líneas(sin líneas en blanco): Vectores de desempeño de cada alternativa respecto al lp");
         System.out.println("-Para ver un ejemplo, consulta el archivo sample_input.txt");
         
         Scanner keyboard = new Scanner(System.in);
@@ -123,6 +126,7 @@ public class AHPSort {
                     exit = false;
                 } else {
                     currentDataFile = file;
+                    fileToMatrix();
                     exit = true;
                 }
             } else {
@@ -134,21 +138,16 @@ public class AHPSort {
     }
     
     /**
-     * It returns an array of matrixes derived from currentDataFile attribute.
+     * It stores all the information in currentDataFile.
      * 
-     * The result is an static array of ArrayList<ArrayList<Double>>, which
-     * are matrixes. The first one is the one about criteria, and the other ones
-     * correspond to each criterion
+     * The result is a set of matrixes(Criteria) and vectors (lps)
      * 
-     * @return array Array containing matrixes
      */
-    private static ArrayList<ArrayList<ArrayList<Double>>> fileToMatrix(){
+    private static void fileToMatrix(){
         if (!currentDataFile.exists()){
             System.out.println("El archivo cargado ya no existe. Por favor, cárgalo de nuevo. \n");
-            return null;
+            return;
         }
-        
-        ArrayList<ArrayList<ArrayList<Double>>> output = new ArrayList<>();
         
         try{
             
@@ -160,11 +159,25 @@ public class AHPSort {
             
             br.readLine(); //Skip empty line
             
-            String m;
-            for (int i = 0; i < numCriteria+1; i++){
-                output.add(stringToMatrix(br.readLine()));
+            criteria = stringToMatrix(br.readLine()); //Store criteria matrix
+            
+            ArrayList<Double> lpTemp = new ArrayList<>();
+            
+            String[] lps = br.readLine().split(",");
+            for (int i = 0; i < lps.length; i++) lpTemp.add(Double.parseDouble(lps[i]));
+            
+            lp = lpTemp; //Store limiting profiles
+            
+            criteriaVectors = new ArrayList<>();
+            for (int i = 0; i < numCriteria; i++){
+               
+                lps = br.readLine().split(",");
                 
-                if (i == numCriteria && output.size() != i+1){ //Check if file was wrongly written
+                criteriaVectors.add(new ArrayList<>());
+                for (int j = 0; j < lps.length; j++) criteriaVectors.get(i).add(Double.parseDouble(lps[j]));
+                
+                
+                if (i == numCriteria && criteriaVectors.get(0).size() != i+1){ //Check if file was wrongly written
                     throw new Exception();
                 }
             }
@@ -172,10 +185,10 @@ public class AHPSort {
         } catch (Exception e){
             System.out.println("Ha habido un problema con el archivo.");
             currentDataFile = null;
-            return null;
+            criteria = null;
+            criteriaVectors = null;
+            lp = null;
         } 
-
-        return output;
     }  
     
     /**
@@ -222,18 +235,39 @@ public class AHPSort {
     
     /**
      * It shows on the screen the loaded file's data
-     * @param data 
      */
-    private static void printData(ArrayList<ArrayList<ArrayList<Double>>> data){
+    private static void printData(){
+        
+        if (lp == null || criteria == null || criteriaVectors == null){
+            System.out.println("Ha habido un error. Carga el archivo de nuevo.");
+            lp = null;
+            criteria = null;
+            criteriaVectors = null;
+            return;
+        }
+        
         System.out.println("Estos son los datos del archivo "+currentDataFile.getName());
         System.out.println("Matriz de comparación entre criterios:");
-        printMatrix(data.get(0));
-        System.out.println("Matrices de comparación de alternativas según cada criterio: ");
+        printMatrix(criteria);
+        System.out.println("Vector de perfiles límite");
         
-        for (int i = 1; i < data.size(); i++){
-            System.out.println("Criterio "+i+": ");
-            printMatrix(data.get(i));
+        System.out.print("[ ");
+        for (int i = 0; i < lp.size(); i++){
+            System.out.print(lp.get(i)+"  ");
         }
+        System.out.println(" ]");
+        System.out.println("Vectores de comparación de cada alternativa según cada criterio respecto al lp: ");
+        
+        for (int i = 0; i < criteriaVectors.size(); i++){
+            System.out.println("Criterio "+(i+1)+": ");
+            System.out.print("[ ");
+            for (int j = 0; j < criteriaVectors.get(0).size(); j++){
+                System.out.print(criteriaVectors.get(i).get(j)+"  ");
+            }
+            System.out.println(" ]");
+        }
+        
+        System.out.println();
     }
     
     
@@ -251,5 +285,116 @@ public class AHPSort {
         }
         
         return m;
+    }
+    
+    private static void solveWithCurrentData(){
+        int numCriteria = criteriaVectors.size();
+        int numAlternatives = criteriaVectors.get(0).size();
+        //FIRST we get criteria weights
+        ArrayList<Double> criteriaWeights = getEigenVector(criteria);
+        
+        //SECOND we compute 2x2 matrixes
+        computeTwoByTwoMatrixes();
+        
+        //THIRD aggregate sums
+        if (twobytwoMatrixes == null){
+            System.out.println("Ha habido un error.");
+            criteria = null;
+            criteriaVectors = null;
+            currentDataFile = null;
+            lp = null;
+            twobytwoMatrixes = null;
+            return;
+        }
+        
+        ArrayList<ArrayList<Double>> tempVectors = new ArrayList<>();
+        for (int i = 0; i < twobytwoMatrixes.size(); i++){        
+            ArrayList<Double> aux = getEigenVector(twobytwoMatrixes.get(i));
+            tempVectors.add(aux);
+        }
+        
+        
+        //FOURTH we check if each alternative fits or not the limit
+        ArrayList<Integer> pass = new ArrayList<>();
+        double sum1,sum2;
+
+        
+        for (int i = 0; i < tempVectors.size(); i+=criteriaVectors.size()){
+            sum1 = 0;
+            sum2 = 0;  
+            for (int j = i; j < i+5; j++){
+                sum1 += tempVectors.get(j).get(0)*criteriaWeights.get(j%criteriaWeights.size());
+                sum2 += tempVectors.get(j).get(1)*criteriaWeights.get(j%criteriaWeights.size());
+            }
+            
+            if (sum1 >= sum2) pass.add(i/numCriteria + 1);
+        }
+       
+        System.out.print("Alternativas que pasan: \n[ ");
+        for (int i = 0; i < pass.size(); i++){
+            System.out.print(pass.get(i) + "  ");
+        }
+        
+        System.out.println(" ]");
+        
+    }
+    
+    /**
+     * It computes the two by two matrixes needed
+     */
+    private static void computeTwoByTwoMatrixes(){
+        twobytwoMatrixes = new ArrayList<>();
+        
+        for (int i = 0; i < criteriaVectors.get(0).size(); i++){ //Each alternative
+            for (int j = 0; j < criteriaVectors.size(); j++){ //Each criterion
+                ArrayList<ArrayList<Double>> aux= new ArrayList<ArrayList<Double>>();
+                
+                aux.add(new ArrayList<>());
+                aux.add(new ArrayList<>());
+                
+                aux.get(0).add(1.0);
+                aux.get(0).add(criteriaVectors.get(j).get(i));
+                aux.get(1).add(1/criteriaVectors.get(j).get(i));
+                aux.get(1).add(1.0);
+                
+                twobytwoMatrixes.add(aux);
+            }
+        }
+    }
+    
+    /**
+     * Given a matrix, it returns its eigenvector
+     * @param m matrix
+     * @return eigenvector
+     */
+    private static ArrayList<Double> getEigenVector(ArrayList<ArrayList<Double>> m){
+        double[][] values = toStaticMatrix(m);
+        
+        RealMatrix matrix=MatrixUtils.createRealMatrix(values);
+        EigenDecomposition descomposition=new EigenDecomposition(matrix);
+        
+        double[] eigenValues=descomposition.getRealEigenvalues();
+        int max = 0;
+        
+        for (int i = 1; i < eigenValues.length; i++){
+            if (eigenValues[i] > eigenValues[max]) max = i;
+        }
+        
+        RealVector eigenVector=descomposition.getEigenvector(max);
+        
+        
+        //Normalize
+        double sum = 0;
+        for (int i = 0; i < eigenVector.getDimension(); i++){
+            sum += eigenVector.getEntry(i);
+        }
+        
+        ArrayList<Double> vector = new ArrayList<>();
+        
+        for (int i = 0; i < eigenVector.getDimension(); i++){
+            vector.add(eigenVector.getEntry(i)/sum);
+        }
+        
+        return vector;
     }
 }
