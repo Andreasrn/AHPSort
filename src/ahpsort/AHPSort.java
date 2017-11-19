@@ -176,7 +176,7 @@ public class AHPSort {
                
                 lps = br.readLine().split(",");
                 
-                toSaatyScale(lps);
+                toSaatyScale(lps,i);
                 criteriaVectors.add(new ArrayList<>());
                 for (int j = 0; j < lps.length; j++) criteriaVectors.get(i).add(Double.parseDouble(lps[j]));
                 
@@ -406,12 +406,12 @@ public class AHPSort {
      * Given an array of string lps, it turns it into Saaty scale.
      * @param lps 
      */
-    private static void toSaatyScale(String[] lps){
+    private static void toSaatyScale(String[] lps, int criterion){
         double aux,limit;
         
         for (int i = 0; i < lps.length; i++){
             aux = Double.parseDouble(lps[i]);
-            limit = lp.get(i);
+            limit = lp.get(criterion);
             
             if (aux > limit){
                 if (aux < limit+5) aux = 3;
