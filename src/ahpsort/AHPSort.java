@@ -41,7 +41,29 @@ public class AHPSort {
             switch (opt){
                 case 1: //Solve class problems
                     //TODO
-                    System.out.println("Lo haría, pero aún no me han implementado.\n");
+                    File file1 = new File("ej1.txt");
+                    File file2 = new File("ej2.txt");
+
+                    if (!file1.exists() || !file2.exists()){
+                        System.out.println("No se puede usar esta función porque no se encuentran los archivos originales del problema.");
+                        break;
+                    } 
+                    
+                    currentDataFile = file1;
+                    System.out.println("Ejercicio B:");
+                    
+                    fileToMatrix();
+                    printData();
+                    solveWithCurrentData();
+                    
+                    currentDataFile = file2;
+                    System.out.println("Ejercicio C:");
+                    
+                    fileToMatrix();
+                    printData();
+                    solveWithCurrentData();
+  
+                    
                     break;
                 case 2: //Load custom file
                     showLoadingFileMenu();
@@ -53,7 +75,7 @@ public class AHPSort {
                     }
                     
                     printData();
-                    //TODO 
+                    
                     solveWithCurrentData();
                 
             }
@@ -176,7 +198,7 @@ public class AHPSort {
                
                 lps = br.readLine().split(",");
                 
-                toSaatyScale(lps,i);
+                if (type == 0) toSaatyScale(lps,i);
                 criteriaVectors.add(new ArrayList<>());
                 for (int j = 0; j < lps.length; j++) criteriaVectors.get(i).add(Double.parseDouble(lps[j]));
                 
