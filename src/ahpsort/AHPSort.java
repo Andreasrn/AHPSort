@@ -103,14 +103,16 @@ public class AHPSort {
      * it must exist.
      */
     private static void showLoadingFileMenu() throws IOException{
+        System.out.println();
         System.out.println("---Cargar fichero---");
         System.out.println("Instrucciones para crear un archivo de valores.");
-        System.out.println("-Primera línea: Número de criterios.");
-        System.out.println("-Segunda línea: Número de alternativas.");
-        System.out.println("-Tercera línea: Línea en blanco");
-        System.out.println("-Cuarta línea: Matriz de criterios, separando los valores con comas e indicando el fin de una línea con un guión. \nEjemplo de matriz identidad 2x2: 1,0-0,1");
-        System.out.println("-Quinta línea: Lista de perfiles límite ordenados de la misma forma en la que se presenten los criterios");
-        System.out.println("-Sucesivas líneas(sin líneas en blanco): Vectores de desempeño de cada alternativa respecto al lp");
+        System.out.println("En primer lugar, hay que especificar si se va a proporcional los valores reales de desempeño, o el grado de desempeño con el limiting profile (en la escala de Saaty). Si se trata de los valores reales, se escribe en la primera línea un 0. De lo contrario, un 1.");
+        System.out.println("-Segunda línea: Número de criterios.");
+        System.out.println("-Tercera línea: Número de alternativas.");
+        System.out.println("-Cuarta línea: Línea en blanco");
+        System.out.println("-Quinta línea: Matriz de criterios, separando los valores con comas e indicando el fin de una línea con un guión. \nEjemplo de matriz identidad 2x2: 1,0-0,1");
+        System.out.println("-Sexta línea: Lista de perfiles límite ordenados de la misma forma en la que se presenten los criterios");
+        System.out.println("-Sucesivas líneas(sin líneas en blanco): Vectores de desempeño de cada alternativa, reales o respecto al lp");
         System.out.println("-Para ver un ejemplo, consulta el archivo sample_input.txt");
         
         Scanner keyboard = new Scanner(System.in);
@@ -154,6 +156,7 @@ public class AHPSort {
             FileReader fr = new FileReader(currentDataFile);
             BufferedReader br = new BufferedReader(fr);
             
+            int type = Integer.parseInt(br.readLine());
             int numCriteria = Integer.parseInt(br.readLine());
             int numAlternatives = Integer.parseInt(br.readLine());
             
@@ -173,6 +176,7 @@ public class AHPSort {
                
                 lps = br.readLine().split(",");
                 
+                toSaatyScale(lps);
                 criteriaVectors.add(new ArrayList<>());
                 for (int j = 0; j < lps.length; j++) criteriaVectors.get(i).add(Double.parseDouble(lps[j]));
                 
@@ -396,5 +400,33 @@ public class AHPSort {
         }
         
         return vector;
+    }
+    
+    /**
+     * Given an array of string lps, it turns it into Saaty scale.
+     * @param lps 
+     */
+    private static void toSaatyScale(String[] lps){
+        double aux,limit;
+        
+        for (int i = 0; i < lps.length; i++){
+            aux = Double.parseDouble(lps[i]);
+            limit = lp.get(i);
+            
+            if (aux > limit){
+                if (aux < limit+5) aux = 3;
+                else if (aux < limit+10) aux = 5;
+                else if (aux < limit+15) aux = 7;
+                else aux = 9;
+            } else if (aux < limit){
+                if (aux > limit-5) aux = 1.0/3.0;
+                else if (aux > limit-10) aux = 1.0/5.0;
+                else if (aux > limit-15) aux = 1.0/7.0;
+                else aux = 1.0/9.0;
+            } else aux = 1;
+            
+            lps[i] = String.valueOf(aux);
+        }      
+        
     }
 }
