@@ -56,12 +56,16 @@ public class AHPSort {
                     printData();
                     solveWithCurrentData();
                     
+                    checkConsistency();
+                    
                     currentDataFile = file2;
                     System.out.println("Ejercicio C:");
                     
                     fileToMatrix();
                     printData();
                     solveWithCurrentData();
+                    
+                    checkConsistency();
   
                     
                     break;
@@ -77,6 +81,8 @@ public class AHPSort {
                     printData();
                     
                     solveWithCurrentData();
+                    
+                    checkConsistency();
                 
             }
             
@@ -338,7 +344,7 @@ public class AHPSort {
             ArrayList<Double> aux = getEigenVector(twobytwoMatrixes.get(i));
             tempVectors.add(aux);
         }
-        
+ 
         
         //FOURTH we check if each alternative fits or not the limit
         ArrayList<Integer> pass = new ArrayList<>();
@@ -451,4 +457,48 @@ public class AHPSort {
         }      
         
     }
+    
+    /**
+     * If a criteria matrix is loaded, it is shown on the screen its consistency.
+     */
+    private static void checkConsistency(){
+        RealMatrix matrix=MatrixUtils.createRealMatrix(toStaticMatrix(criteria));
+        EigenDecomposition descomposition=new EigenDecomposition(matrix);
+        
+        double[] eigenValues=descomposition.getRealEigenvalues();
+        int max = 0;
+        double maxEV = eigenValues[0];
+        
+        for (int i = 1; i < eigenValues.length; i++){
+            if (eigenValues[i] > eigenValues[max]){
+                max = i;
+                maxEV = eigenValues[max];
+            }
+        }
+        
+        Double ci = (maxEV-eigenValues.length) / (eigenValues.length-1);
+        
+        //Random indexes (starting from n = 2)
+        double[] ri = new double[9];
+        ri[0] = 0.58; //Made up by me
+        ri[1] = 0.58;
+        ri[2] = 1.9;
+        ri[3] = 1.12;
+        ri[4] = 1.24;
+        ri[5] = 1.32;
+        ri[6] = 1.41;
+        ri[7] = 1.44;
+        ri[8] = 1.49;
+        //Return consistency ratio
+        
+        Double cr = ci/ri[criteria.size()-2];
+        
+        System.out.println("Consistencia de los datos: ");
+        System.out.println("Ratio de consistencia: "+cr);
+        if (cr > 0.1) System.out.println("Los datos no son consistentes, por lo que los resultados no son fiables.");
+        else System.out.println("Los datos son consistentes, por lo que se puede confiar en la clasificación obtenida.");
+        System.out.println();
+    }
+    
+
 }
